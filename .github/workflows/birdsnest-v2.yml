@@ -17,11 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Read current gallery contract
-        run: |
-          curl --fail --location --max-time 35 'https://endless-gallery.zz-zzyoung.chatgpt.site/gallery/GALLERY_INTEGRATION.md' -o /tmp/gallery-integration.md && sha256sum /tmp/gallery-integration.md || echo 'PUBLIC_MARKDOWN_UNREACHABLE'
-          curl --fail --location --max-time 35 'https://endless-gallery.zz-zzyoung.chatgpt.site/gallery/contract.json' -o /tmp/gallery-contract.json && cat /tmp/gallery-contract.json || echo 'PUBLIC_JSON_UNREACHABLE'
-      - name: Install isolated build tools
+      - name: Install isolated build and browser tools
         run: |
           cd gallery-assets/birdsnest-v2
           npm install --no-audit --no-fund
@@ -33,7 +29,8 @@ jobs:
         run: |
           cd gallery-assets/birdsnest-v2
           npm test || { cat evidence/acceptance.json; exit 1; }
-      - name: Save evidence and passing distribution
+          cat evidence/acceptance.json
+      - name: Persist actual tested files
         if: always()
         env:
           VERIFIED: ${{ steps.verify.outcome }}
@@ -43,21 +40,51 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add gallery-assets/birdsnest-v2/evidence
           if [ "$VERIFIED" = 'success' ]; then
-            cd gallery-assets/birdsnest-v2
-            zip -qr birdsnest-v2-experience.zip dist src tests build.mjs package.json package-lock.json DESIGN.md evidence
-            mv birdsnest-v2-experience.zip dist/
-            cd ../..
             git add gallery-assets/birdsnest-v2/dist gallery-assets/birdsnest-v2/package-lock.json
           fi
-          git diff --cached --quiet && exit 0
-          git commit -m "build: Birdsnest V2 browser result $VERIFIED [skip ci]"
+          if ! git diff --cached --quiet; then
+            git commit -m "build: final Birdsnest browser result $VERIFIED [skip ci]"
+            git push origin HEAD:feat/birdsnest-v2-experience
+          fi
+      - name: Verify immutable hosted preview
+        if: steps.verify.outcome == 'success'
+        run: node tools/birdsnest-publish.mjs
+      - name: Package and publish the tested experience
+        if: steps.verify.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ROOT=gallery-assets/birdsnest-v2
+          TAG="birdsnest-v2-${GITHUB_RUN_ID}"
+          python - "$ROOT" "$TAG" <<'PY'
+          import json,sys
+          from pathlib import Path
+          root=Path(sys.argv[1]); tag=sys.argv[2]
+          p=root/'dist/publication.json'; d=json.loads(p.read_text())
+          d['releaseUrl']='https://github.com/zzayoung/my-skills/releases/tag/'+tag
+          d['htmlDownloadUrl']='https://github.com/zzayoung/my-skills/releases/download/'+tag+'/birdsnest-v2-offline.html'
+          d['zipDownloadUrl']='https://github.com/zzayoung/my-skills/releases/download/'+tag+'/birdsnest-v2-experience.zip'
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2))
+          PY
+          rm -f "$ROOT/dist/birdsnest-v2-experience.zip"
+          (cd "$ROOT" && zip -qr /tmp/birdsnest-v2-experience.zip dist src tests build.mjs package.json package-lock.json DESIGN.md evidence)
+          cp /tmp/birdsnest-v2-experience.zip "$ROOT/dist/"
+          gh release create "$TAG" --repo zzayoung/my-skills --target "$(git rev-parse HEAD)" --prerelease --latest=false --title '鸟巢 V2 · 雨后的钢织天空' --notes '体验重做：模型总览、连续走入、第一人称、Ghost、天气与声景、触屏操作。附实际浏览器测试记录。建筑研究重建，非测绘级 BIM；尚未正式登记到无尽之馆。' "$ROOT/dist/birdsnest-v2-offline.html" "$ROOT/dist/birdsnest-v2-experience.zip" "$ROOT/evidence/01-overview.png" "$ROOT/evidence/08-mobile-overview.png" "$ROOT/evidence/acceptance.json" "$ROOT/dist/publication.json"
+          git add "$ROOT/dist/publication.json"
+          git commit -m 'docs: record verified preview and release addresses [skip ci]'
           git push origin HEAD:feat/birdsnest-v2-experience
+      - name: Prepare a directly usable download folder
+        if: always()
+        run: |
+          mkdir -p /tmp/birdsnest-delivery
+          if [ -d gallery-assets/birdsnest-v2/dist ]; then cp -r gallery-assets/birdsnest-v2/dist/. /tmp/birdsnest-delivery/; fi
+          if [ -d gallery-assets/birdsnest-v2/evidence ]; then cp -r gallery-assets/birdsnest-v2/evidence /tmp/birdsnest-delivery/; fi
+          cp -r gallery-assets/birdsnest-v2/src /tmp/birdsnest-delivery/source
+          rm -f /tmp/birdsnest-delivery/birdsnest-v2-experience.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: birdsnest-v2-experience
-          path: |
-            gallery-assets/birdsnest-v2/dist
-            gallery-assets/birdsnest-v2/evidence
-          if-no-files-found: ignore
+          path: /tmp/birdsnest-delivery
+          if-no-files-found: error
           retention-days: 30
