@@ -1,27 +1,22 @@
-name: Birdsnest failure diagnostics
+name: Birdsnest source refinement
 on:
   push:
     branches: [feat/birdsnest-v2-experience]
     paths: ['.github/workflows/birdsnest-diagnostics.yml']
 permissions:
   contents: write
-  actions: read
 jobs:
-  inspect:
+  refine:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - name: Read captured failure from the actual test run
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Apply exact reviewed source changes
         run: |
-          gh run download 39420628596 --repo zzayoung/my-skills --name birdsnest-v2-experience --dir /tmp/birdsnest-diagnostic
-          cat /tmp/birdsnest-diagnostic/evidence/acceptance.json
-          mkdir -p gallery-assets/birdsnest-v2/evidence
-          cp /tmp/birdsnest-diagnostic/evidence/acceptance.json gallery-assets/birdsnest-v2/evidence/initial-failure.json
-          git config user.name 'Birdsnest test evidence'
+          python tools/birdsnest-refine.py
+          git diff --stat
+          git config user.name 'Birdsnest source refinement'
           git config user.email 'actions@users.noreply.github.com'
-          git add gallery-assets/birdsnest-v2/evidence/initial-failure.json
-          git commit -m 'test: retain first failing browser result for regression [skip ci]'
+          git add gallery-assets/birdsnest-v2/src gallery-assets/birdsnest-v2/evidence
+          git commit -m 'fix: GLSL mask, sector seat LOD, timed navigation and contextual dock [skip ci]'
           git push origin HEAD:feat/birdsnest-v2-experience
