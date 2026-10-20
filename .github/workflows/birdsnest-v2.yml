@@ -17,26 +17,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Read the gallery integration contract
+      - name: Read current gallery contract
         run: |
-          curl --fail --location --max-time 35 'https://endless-gallery.zz-zzyoung.chatgpt.site/gallery/GALLERY_INTEGRATION.md' -o /tmp/gallery-integration.md && head -c 60000 /tmp/gallery-integration.md || echo 'PUBLIC_CONTRACT_UNREACHABLE'
-      - name: Install and build isolated experience
+          curl --fail --location --max-time 35 'https://endless-gallery.zz-zzyoung.chatgpt.site/gallery/GALLERY_INTEGRATION.md' -o /tmp/gallery-integration.md && sha256sum /tmp/gallery-integration.md || echo 'PUBLIC_MARKDOWN_UNREACHABLE'
+          curl --fail --location --max-time 35 'https://endless-gallery.zz-zzyoung.chatgpt.site/gallery/contract.json' -o /tmp/gallery-contract.json && cat /tmp/gallery-contract.json || echo 'PUBLIC_JSON_UNREACHABLE'
+      - name: Install isolated build tools
         run: |
-          if [ ! -f gallery-assets/birdsnest-v2/package.json ]; then echo 'PREFLIGHT_ONLY'; exit 0; fi
           cd gallery-assets/birdsnest-v2
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
-          npm run build
-          npm test
-      - name: Save generated experience and evidence
-        if: success()
+      - name: Build complete offline files
+        run: cd gallery-assets/birdsnest-v2 && npm run build
+      - name: Verify actual desktop and touch interactions
+        id: verify
         run: |
-          if [ ! -f gallery-assets/birdsnest-v2/dist/birdsnest-v2-offline.html ]; then exit 0; fi
+          cd gallery-assets/birdsnest-v2
+          npm test || { cat evidence/acceptance.json; exit 1; }
+      - name: Save evidence and passing distribution
+        if: always()
+        env:
+          VERIFIED: ${{ steps.verify.outcome }}
+        run: |
+          if [ ! -f gallery-assets/birdsnest-v2/evidence/acceptance.json ]; then exit 0; fi
           git config user.name 'Birdsnest build'
           git config user.email 'actions@users.noreply.github.com'
-          git add gallery-assets/birdsnest-v2/dist gallery-assets/birdsnest-v2/evidence gallery-assets/birdsnest-v2/package-lock.json
+          git add gallery-assets/birdsnest-v2/evidence
+          if [ "$VERIFIED" = 'success' ]; then
+            cd gallery-assets/birdsnest-v2
+            zip -qr birdsnest-v2-experience.zip dist src tests build.mjs package.json package-lock.json DESIGN.md evidence
+            mv birdsnest-v2-experience.zip dist/
+            cd ../..
+            git add gallery-assets/birdsnest-v2/dist gallery-assets/birdsnest-v2/package-lock.json
+          fi
           git diff --cached --quiet && exit 0
-          git commit -m 'build: verified Birdsnest V2 distribution and evidence [skip ci]'
+          git commit -m "build: Birdsnest V2 browser result $VERIFIED [skip ci]"
           git push origin HEAD:feat/birdsnest-v2-experience
       - uses: actions/upload-artifact@v4
         if: always()
