@@ -11,12 +11,12 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - name: Apply exact reviewed source changes
+      - name: Apply exact reviewed source refinements
         run: |
-          python tools/birdsnest-refine.py
+          python tools/birdsnest-finish.py
           git diff --stat
           git config user.name 'Birdsnest source refinement'
           git config user.email 'actions@users.noreply.github.com'
-          git add gallery-assets/birdsnest-v2/src gallery-assets/birdsnest-v2/evidence
-          git commit -m 'fix: GLSL mask, sector seat LOD, timed navigation and contextual dock [skip ci]'
+          git add gallery-assets/birdsnest-v2/src
+          git commit -m 'design: portrait framing, full infield, consistent preview and movement substeps [skip ci]'
           git push origin HEAD:feat/birdsnest-v2-experience
