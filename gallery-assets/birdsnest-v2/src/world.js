@@ -119,6 +119,12 @@ export function createBirdsnestWorld(T, options={}) {
       m.userData.seatDetail=true;m.receiveShadow=true;m.computeBoundingSphere();parts.bowl.add(m);
     }
   }
+  // Green infield occupies the complete athletic-track interior, not just the pitch.
+  const infieldShape=new T.Shape();
+  infieldShape.moveTo(36.5,-42.2);infieldShape.lineTo(36.5,42.2);
+  infieldShape.absarc(0,42.2,36.5,0,Math.PI,false);
+  infieldShape.lineTo(-36.5,-42.2);infieldShape.absarc(0,-42.2,36.5,Math.PI,Math.PI*2,false);infieldShape.closePath();
+  const infield=mesh(new T.ShapeGeometry(infieldShape,48),M.grass,parts.interior,0,G+.06,0);infield.rotation.x=-Math.PI/2;infield.castShadow=false;
   // The athletic track has parallel straights and semicircular ends, not an ellipse.
   const capsule=(t,r)=>[Math.cos(t)*r,Math.sin(t)*r+(Math.sin(t)>=0?42.2:-42.2)];
   for(let i=0;i<192;i++){const t=i/192*TAU,t2=(i+1)/192*TAU,a=capsule(t,47.6),b=capsule(t,36.5),c=capsule(t2,36.5),d=capsule(t2,47.6);quad([a[0],G+.075,a[1]],[b[0],G+.075,b[1]],[c[0],G+.075,c[1]],[d[0],G+.075,d[1]],M.track,parts.interior);for(let lane=0;lane<10;lane++){const r=36.5+lane*1.22;const a=capsule(t,r),b=capsule(t,r+.065),c=capsule(t2,r+.065),d=capsule(t2,r);quad([a[0],G+.09,a[1]],[b[0],G+.09,b[1]],[c[0],G+.09,c[1]],[d[0],G+.09,d[1]],M.line,parts.interior);}}
@@ -142,9 +148,11 @@ export function createBirdsnestWorld(T, options={}) {
   const door=new T.Group();door.position.set(201.3,6,32);parts.underground.add(door);const doorPanel=mesh(new T.BoxGeometry(7.4,5.6,.2),M.blue,door,3.7,2.8,0);doorPanel.castShadow=true;
   let doorOpen=true,doorAngle=0;door.rotation.y=-Math.PI/2;
   // Landscape: clustered canopies, trunks, lamp pools, seats and railings.
+  // Stable positions independent of preview detail or seat-generation RNG.
+  seed=20261020;
   const treePositions=[];
-  for(let i=0;i<(preview?44:100);i++){
-    const t=i/(preview?44:100)*TAU;const x=(231+rand()*15)*Math.cos(t),z=(222+rand()*12)*Math.sin(t);
+  for(let i=0;i<100;i++){
+    const t=i/100*TAU;const x=(231+rand()*15)*Math.cos(t),z=(222+rand()*12)*Math.sin(t);
     if(Math.abs(x)<22&&z>170)continue;if(x>184&&x<225&&z>0&&z<90)continue;treePositions.push([x,z,5.5+rand()*4]);
   }
   const treeLeaves=new T.InstancedMesh(new T.SphereGeometry(1,preview?6:9,preview?4:6),M.leaf,treePositions.length*5);

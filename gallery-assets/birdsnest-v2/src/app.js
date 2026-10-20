@@ -37,9 +37,9 @@ const backdrop=new T.Mesh(new T.PlaneGeometry(5000,5000),floorMat);backdrop.rota
 const world=createBirdsnestWorld(T);world.materials.redGlow.side=T.DoubleSide;scene.add(world.group);
 const seatDetailMeshes=world.parts.bowl.children.filter(o=>o.userData.seatDetail);
 const arenaFill=new T.PointLight('#ffe6b4',0,240,2);arenaFill.position.set(0,72,0);scene.add(arenaFill);
-const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=true;controls.minDistance=155;controls.maxDistance=1050;controls.minPolarAngle=.17;controls.maxPolarAngle=1.43;controls.zoomSpeed=.8;controls.rotateSpeed=.68;controls.panSpeed=.7;
+const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=true;controls.minDistance=155;controls.maxDistance=touch?2600:1400;controls.minPolarAngle=.17;controls.maxPolarAngle=1.43;controls.zoomSpeed=.8;controls.rotateSpeed=.68;controls.panSpeed=.7;
 camera.position.fromArray(VIEWS[0].position);controls.target.fromArray(VIEWS[0].target);
-if(innerWidth<700)camera.position.sub(controls.target).multiplyScalar(1.42).add(controls.target);
+if(innerWidth<700)camera.position.sub(controls.target).multiplyScalar(Math.max(1.42,1.05/camera.aspect)).add(controls.target);
 controls.update();
 let mode='orbit',weather='afterrain',night=false,nightMix=0,section='all',quality='balanced',yaw=0,pitch=0,flightSpeed=22,transition=null,visited=new Set(),focusedInteraction=null;
 let lastStats={triangles:0,calls:0},elapsed=0,frame=0,disposed=false,lastMove=0,firstFrame=true;
@@ -136,7 +136,7 @@ function openPanel(kind){keys.clear();joy={x:0,y:0};currentPanel=kind;focusBefor
 }
 function closePanel(restore=true){$('#panel').classList.remove('open');currentPanel='';keys.clear();if(restore&&focusBeforePanel?.isConnected)focusBeforePanel.focus({preventScroll:true});}
 function setNight(value){night=value;$('#nighttext').textContent=night?'夜色':'黄昏';renderer.shadowMap.needsUpdate=true;}
-function setQuality(value){quality=value;renderer.setPixelRatio(Math.min(devicePixelRatio,value==='high'?2:value==='low'?1:touch?1.35:1.5));renderer.shadowMap.enabled=value!=='low';renderer.shadowMap.needsUpdate=true;toast(value==='low'?'已减轻阴影与反射计算，保留建筑几何':'画面细节已调整');}
+function setQuality(value){quality=value;renderer.setPixelRatio(Math.min(devicePixelRatio,value==='high'?2:value==='low'?.85:touch?1.25:1));renderer.shadowMap.enabled=value!=='low';renderer.shadowMap.needsUpdate=true;toast(value==='low'?'已减轻阴影与反射计算，保留建筑几何':'画面细节已调整');}
 $('#enter').onclick=()=>mode==='orbit'?flyTo('plaza'):returnOrbit();$('#fly').onclick=toggleGhost;$('#views').onclick=()=>openPanel('views');$('#climate').onclick=()=>openPanel('climate');$('#help').onclick=()=>openPanel('help');$('#close-panel').onclick=()=>closePanel();$('#panel').addEventListener('pointerdown',e=>{if(e.target===$('#panel'))closePanel();});
 $('#night').onclick=()=>setNight(!night);$('#sound').onclick=toggleAudio;
 $('#section').onclick=()=>{section=section==='all'?'open':'all';world.setSection(section);$('#sectiontext').textContent=section==='open'?'合上屋盖':'揭开屋盖';$('#section').classList.toggle('active',section==='open');renderer.shadowMap.needsUpdate=true;};
@@ -151,7 +151,7 @@ canvas.addEventListener('pointerdown',e=>{canvas.focus({preventScroll:true});bod
 canvas.addEventListener('pointermove',e=>{if(mode==='orbit'||lookPointer!==e.pointerId||currentPanel)return;const dx=e.clientX-lookPrevious.x,dy=e.clientY-lookPrevious.y;lookPrevious={x:e.clientX,y:e.clientY};dragDistance+=Math.abs(dx)+Math.abs(dy);yaw-=dx*.0032;pitch=clamp(pitch-dy*.0028,-1.4,1.4);applyLook();});
 function endLook(e){if(lookPointer!==e.pointerId)return;lookPointer=null;canvas.classList.remove('dragging');if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);}
 canvas.addEventListener('pointerup',endLook);canvas.addEventListener('pointercancel',endLook);canvas.addEventListener('lostpointercapture',()=>{lookPointer=null;canvas.classList.remove('dragging');});canvas.addEventListener('contextmenu',e=>e.preventDefault());
-window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)return;const key=e.key.toLowerCase();if(key==='escape'){if(currentPanel)closePanel();else if(transition)cancelTransition();return;}if(currentPanel){if(key==='tab'){const buttons=[...$('#panel').querySelectorAll('button,input')];if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}}return;}if(['w','a','s','d','q','e',' ','control','arrowleft','arrowright','arrowup','arrowdown'].includes(key)){e.preventDefault();keys.add(key);if(mode!=='orbit')cancelTransition();}if(e.repeat)return;if(key==='g')toggleGhost();if(key==='v')returnOrbit();if(key==='h')body.classList.toggle('quiet');if(key==='f')interact();});
+window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)return;const key=e.key.toLowerCase();if(key==='escape'){if(currentPanel)closePanel();else if(transition)cancelTransition();return;}if(currentPanel){if(key==='tab'){const buttons=[...$('#panel').querySelectorAll('button,input')];if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}}return;}if(['w','a','s','d','q','e',' ','control','shift','arrowleft','arrowright','arrowup','arrowdown'].includes(key)){e.preventDefault();keys.add(key);if(mode!=='orbit')cancelTransition();}if(e.repeat)return;if(key==='g')toggleGhost();if(key==='v')returnOrbit();if(key==='h')body.classList.toggle('quiet');if(key==='f')interact();});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 function resetInput(){keys.clear();joy={x:0,y:0};heightInput=0;lookPointer=null;$('#stick').style.transform='';}
 window.addEventListener('blur',resetInput);document.addEventListener('visibilitychange',()=>{resetInput();if(audio&&document.hidden)audio.master.gain.setTargetAtTime(0,audio.ctx.currentTime,.1);else if(audio&&audioOn)audio.master.gain.setTargetAtTime(.55,audio.ctx.currentTime,.2);});
@@ -180,8 +180,8 @@ function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMa
 window.addEventListener('resize',resize);canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();disposed=true;fatal(new Error('图形上下文中断；重新打开可恢复场景。'));});
 world.setWeather(weather);
 const clock=new T.Clock();
-function animate(){if(disposed)return;requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.12);elapsed+=dt;frame++;
- updateTransition(dt);if(mode==='orbit'&&!transition)controls.update();const moved=updateMovement(dt);world.update(dt,elapsed);updateLighting(dt);atmosphere(dt,elapsed);updateAudio(moved);
+function animate(){if(disposed)return;requestAnimationFrame(animate);const frameDelta=Math.min(clock.getDelta(),.5),dt=Math.min(frameDelta,.1);elapsed+=dt;frame++;
+ updateTransition(dt);if(mode==='orbit'&&!transition)controls.update();let moved=0;for(let remaining=frameDelta;remaining>0;){const step=Math.min(remaining,.05);moved+=updateMovement(step);remaining-=step;}world.update(dt,elapsed);updateLighting(dt);atmosphere(dt,elapsed);updateAudio(moved);
  if(frame%3===0)updateHotspots();if(elapsed-lastInteractionUpdate>.15){updateInteractions();lastInteractionUpdate=elapsed;}
  for(const m of seatDetailMeshes)m.visible=camera.position.distanceTo(m.boundingSphere.center)<215;
  renderer.render(scene,camera);lastStats={triangles:renderer.info.render.triangles,calls:renderer.info.render.calls};
