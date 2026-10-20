@@ -1,0 +1,11 @@
+{
+  "checks": [],
+  "errors": [
+    "Unexpected identifier 'uniform'",
+    "page.waitForFunction: Timeout 90000ms exceeded.\n    at /home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/tests/acceptance.mjs:21:14"
+  ],
+  "externalRequests": [],
+  "testEnvironment": "Headless Chromium / Linux / SwiftShader. This does not establish user-device frame rate.",
+  "passed": 0,
+  "failed": 0
+}
