@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "17f0230d6c7d94d2d988196a809682f6b9a8b234",
+  "offlineFile": "birdsnest-v2-offline.html",
+  "onlinePreview": null,
+  "onlineVerified": false,
+  "galleryRegistered": false,
+  "checks": [
+    "HTTP response contains the generated experience"
+  ],
+  "notes": "The browser preview is not a separate GPT Site. Gallery assets have not been uploaded or registered.",
+  "onlineError": "page.waitForFunction: Timeout 90000ms exceeded.",
+  "releaseUrl": "https://github.com/zzayoung/my-skills/releases/tag/birdsnest-v2-39423993278",
+  "htmlDownloadUrl": "https://github.com/zzayoung/my-skills/releases/download/birdsnest-v2-39423993278/birdsnest-v2-offline.html",
+  "zipDownloadUrl": "https://github.com/zzayoung/my-skills/releases/download/birdsnest-v2-39423993278/birdsnest-v2-experience.zip"
+}
