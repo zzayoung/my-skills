@@ -6,11 +6,11 @@
       "detail": "鸟巢 · 雨后的钢织天空"
     },
     {
-      "name": "no CDN or remote asset requests",
+      "name": "no remote asset requests",
       "pass": true
     },
     {
-      "name": "orbit drag changes the actual camera position",
+      "name": "orbit drag changes the actual camera",
       "pass": true
     },
     {
@@ -18,7 +18,7 @@
       "pass": true
     },
     {
-      "name": "walk button enters a human eye-height view",
+      "name": "walk button reaches the actual plaza at eye height",
       "pass": true,
       "detail": [
         10,
@@ -27,74 +27,110 @@
       ]
     },
     {
-      "name": "WASD moves without pointer lock",
-      "pass": false,
-      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(Math.hypot(a.camera[0]-b.camera[0], a.camera[2]-b.camera[2]) > 0.5)\n"
+      "name": "W moves without pointer lock",
+      "pass": true,
+      "detail": [
+        9.62431615379212,
+        19.7,
+        204.99452923033678
+      ]
     },
     {
-      "name": "drag look changes walking orientation",
+      "name": "drag rotates the walking camera",
       "pass": true
     },
     {
-      "name": "Ghost toggles and ascends",
-      "pass": false,
-      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(b.camera[1]>a.camera[1]+.5)\n"
+      "name": "Ghost toggles and actually ascends",
+      "pass": true,
+      "detail": [
+        9.62431615379212,
+        30.700000000000014,
+        204.99452923033678
+      ]
     },
     {
-      "name": "return-to-model restores orbit",
+      "name": "return reaches the saved orbit view",
       "pass": true
     },
     {
-      "name": "weather selection preserves camera and changes environment",
+      "name": "weather selection preserves the view mode",
       "pass": true
     },
     {
-      "name": "night illumination switch",
+      "name": "night switch changes environment state",
       "pass": true
     },
     {
-      "name": "section control reveals actual interior",
+      "name": "roof section reveals the interior",
       "pass": true
     },
     {
-      "name": "viewpoint enters the real field",
-      "pass": false,
-      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(Math.abs(s.camera[0]) < 40 && Math.abs(s.camera[2]) < 60)\n"
+      "name": "field viewpoint arrives inside the actual field",
+      "pass": true,
+      "detail": [
+        12,
+        19.7,
+        40
+      ]
     },
     {
       "name": "underground viewpoint remains below grade",
+      "pass": true,
+      "detail": [
+        205,
+        7.7,
+        24
+      ]
+    },
+    {
+      "name": "hidden interface can be restored",
       "pass": true
     },
     {
-      "name": "hide interface is reversible",
+      "name": "Escape closes the panel",
       "pass": true
     },
     {
-      "name": "escape closes a panel without losing the scene",
-      "pass": true
-    },
-    {
-      "name": "frame statistics describe non-empty source geometry",
+      "name": "real source geometry renders in bounded draw calls",
       "pass": true,
       "detail": {
-        "triangles": 153280,
-        "calls": 28
+        "triangles": 54886,
+        "calls": 23
       }
     },
     {
-      "name": "source preview GLB exports successfully",
+      "name": "same-source GLB exports",
       "pass": true,
       "detail": {
-        "bytes": 10276744,
-        "sha256": "35d7de65f1f3ecd2d9991685a225afea9958071e7ef0728614fa5eca798c3bf3"
+        "bytes": 10301068,
+        "sha256": "766098124112430d8910636285742cd8edc95cbf75a7d9fa149405060aa726dc"
       }
+    },
+    {
+      "name": "mobile has no horizontal page overflow",
+      "pass": true
+    },
+    {
+      "name": "mobile walk-in reaches plaza and exposes a joystick",
+      "pass": true
+    },
+    {
+      "name": "real touch drag rotates the view",
+      "pass": true
+    },
+    {
+      "name": "real touch joystick moves the camera",
+      "pass": true
+    },
+    {
+      "name": "no uncaught JS, shader or remote-resource errors",
+      "pass": true
     }
   ],
-  "errors": [
-    "page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"file:///home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/dist/birdsnest-v2-offline.html\", waiting until \"load\"\n\n    at /home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/tests/acceptance.mjs:51:16"
-  ],
+  "errors": [],
   "externalRequests": [],
-  "testEnvironment": "Headless Chromium / Linux / SwiftShader. This does not establish user-device frame rate.",
-  "passed": 15,
-  "failed": 3
+  "stage": "finished",
+  "testEnvironment": "Headless Chromium / Linux / SwiftShader, 1000x750 desktop and 390x844 touch. Screenshots pause the render loop only during capture. Navigation waits on actual arrival; this is not a user-device FPS benchmark.",
+  "passed": 23,
+  "failed": 0
 }

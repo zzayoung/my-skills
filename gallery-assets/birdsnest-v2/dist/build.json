@@ -1,0 +1,19 @@
+{
+  "name": "鸟巢 · 雨后的钢织天空",
+  "version": "2.0-experience",
+  "sourceIdentity": "file:file_000000000fe08230b1b0baa3801be6c0",
+  "html": {
+    "file": "birdsnest-v2-offline.html",
+    "bytes": 823255,
+    "sha256": "3f2f3dbc7fe4b05edef395f053fabac1a0889859645395fdde0ca7dc1ab69aa2"
+  },
+  "module": {
+    "file": "birdsnest-v2.mjs",
+    "bytes": 20142,
+    "sha256": "a2de56c682d93d6223e5f5f85a721ba8e3ea5dd2bb5fefa6c7f59ae440daa503"
+  },
+  "units": "metres",
+  "grade": 18,
+  "accuracy": "Architectural research reconstruction; not an as-built BIM or survey.",
+  "galleryStatus": "Not uploaded or registered; final same-origin URLs and host verification are required."
+}
