@@ -1,15 +1,24 @@
 import { build } from 'esbuild';
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { Script } from 'node:vm';
+import assert from 'node:assert/strict';
 await mkdir('dist',{recursive:true});
 const hash=data=>createHash('sha256').update(data).digest('hex');
 const result=await build({entryPoints:['src/app.js'],bundle:true,format:'iife',target:['es2022'],minify:true,write:false,legalComments:'inline'});
 const template=await readFile('src/index.html','utf8');
-const html=template.replace('<!--APP-->','<script>'+result.outputFiles[0].text.replaceAll('</script','<\\/script')+'</script>');
+const js=result.outputFiles[0].text.replaceAll('</script','<\\/script');
+new Script(js,{filename:'standalone-bundle.js'});
+// A replacement callback is mandatory: shader strings contain $ sequences that
+// String.replace interprets when the replacement is passed as a plain string.
+const html=template.replace('<!--APP-->',()=>'<script>'+js+'</script>');
+const extracted=html.slice(html.indexOf('<script>')+8,html.indexOf('</script>'));
+assert.equal(extracted,js,'The generated HTML must preserve every byte of the JavaScript bundle');
+new Script(extracted,{filename:'final-offline-html-script.js'});
 await writeFile('dist/birdsnest-v2-offline.html',html);
 await build({entryPoints:['src/gallery.js'],bundle:true,format:'esm',target:['es2022'],minify:true,outfile:'dist/birdsnest-v2.mjs',legalComments:'inline'});
 const module=await readFile('dist/birdsnest-v2.mjs');
 await writeFile('dist/build.json',JSON.stringify({name:'鸟巢 · 雨后的钢织天空',version:'2.0-experience',sourceIdentity:'file:file_000000000fe08230b1b0baa3801be6c0',html:{file:'birdsnest-v2-offline.html',bytes:Buffer.byteLength(html),sha256:hash(html)},module:{file:'birdsnest-v2.mjs',bytes:module.length,sha256:hash(module)},units:'metres',grade:18,accuracy:'Architectural research reconstruction; not an as-built BIM or survey.',galleryStatus:'Not uploaded or registered; final same-origin URLs and host verification are required.'},null,2));
 await copyFile('node_modules/three/LICENSE','dist/THREE-LICENSE.txt');
 await writeFile('dist/README.txt',`鸟巢 V2 · 雨后的钢织天空\n\n打开 birdsnest-v2-offline.html 即可体验。无需网络或本地服务器。\n\n模型：拖动旋转，滚轮/双指缩放。点击“走进鸟巢”进入广场。\n走入：WASD 移动、拖动环顾；F 近处互动；G 切换自由飞行，E/Q 升降；V 返回模型。\n手机：左侧摇杆移动、右侧拖动环顾，飞行时右侧升降按钮。\nH 隐藏/恢复界面。观景点、天气、光照、声音与画质按需展开。\n\n这次重做面向沉浸式体验：默认模型全景，轻界面，连续镜头，离线控制。\n主体为米制建筑研究重建。钢构连接、地下房间与周边景观并非经实测的精确工程资料。\n天气与声音为程序模拟，不是实时气象或现场录音。\n\n附带同源几何派生的 gallery 模块及真实源几何预览。保存这些文件不等于已经入馆；上传、登记、目录回读、真实宿主加载需单独验证。\n`);
-console.log(JSON.stringify({build:'ok',htmlBytes:Buffer.byteLength(html),moduleBytes:module.length}));
+console.log(JSON.stringify({build:'ok',htmlBytes:Buffer.byteLength(html),moduleBytes:module.length,finalScriptSyntax:'passed',bundlePreserved:'passed'}));
