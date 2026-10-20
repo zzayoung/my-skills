@@ -8,14 +8,93 @@
     {
       "name": "no CDN or remote asset requests",
       "pass": true
+    },
+    {
+      "name": "orbit drag changes the actual camera position",
+      "pass": true
+    },
+    {
+      "name": "wheel zoom changes camera distance",
+      "pass": true
+    },
+    {
+      "name": "walk button enters a human eye-height view",
+      "pass": true,
+      "detail": [
+        10,
+        19.7,
+        208
+      ]
+    },
+    {
+      "name": "WASD moves without pointer lock",
+      "pass": false,
+      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(Math.hypot(a.camera[0]-b.camera[0], a.camera[2]-b.camera[2]) > 0.5)\n"
+    },
+    {
+      "name": "drag look changes walking orientation",
+      "pass": true
+    },
+    {
+      "name": "Ghost toggles and ascends",
+      "pass": false,
+      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(b.camera[1]>a.camera[1]+.5)\n"
+    },
+    {
+      "name": "return-to-model restores orbit",
+      "pass": true
+    },
+    {
+      "name": "weather selection preserves camera and changes environment",
+      "pass": true
+    },
+    {
+      "name": "night illumination switch",
+      "pass": true
+    },
+    {
+      "name": "section control reveals actual interior",
+      "pass": true
+    },
+    {
+      "name": "viewpoint enters the real field",
+      "pass": false,
+      "error": "The expression evaluated to a falsy value:\n\n  assert.ok(Math.abs(s.camera[0]) < 40 && Math.abs(s.camera[2]) < 60)\n"
+    },
+    {
+      "name": "underground viewpoint remains below grade",
+      "pass": true
+    },
+    {
+      "name": "hide interface is reversible",
+      "pass": true
+    },
+    {
+      "name": "escape closes a panel without losing the scene",
+      "pass": true
+    },
+    {
+      "name": "frame statistics describe non-empty source geometry",
+      "pass": true,
+      "detail": {
+        "triangles": 153280,
+        "calls": 28
+      }
+    },
+    {
+      "name": "source preview GLB exports successfully",
+      "pass": true,
+      "detail": {
+        "bytes": 10276744,
+        "sha256": "35d7de65f1f3ecd2d9991685a225afea9958071e7ef0728614fa5eca798c3bf3"
+      }
     }
   ],
   "errors": [
-    "THREE.WebGLProgram: Shader Error 0 - VALIDATE_STATUS false\n\nMaterial Name: unspecified\nMaterial Type: ShaderMaterial\n\nProgram Info Log: Fragment shader is not compiled.\n\u0000\n\nFRAGMENT\n\nERROR: 0:160: 'patch' : Illegal use of reserved word\nERROR: 0:160: 'patch' : syntax error\n\u0000\n\n  155: \treturn dot( weights, rgb );\n  156: }\n  157: \n  158: uniform sampler2D tDiffuse;uniform vec3 color;uniform float wetness;uniform float clock;varying vec4 vUv;varying vec3 vWorld;\n  159:  float noise(vec2 p){return sin(p.x*.11+sin(p.y*.08)*2.)*.5+sin(p.y*.15-p.x*.043)*.27+sin(p.x*.34+p.y*.27)*.13;}\n> 160:  void main(){vec2 p=vWorld.xz;float ellipse=length(p/vec2(160.,179.));float outside=smoothstep(1.,1.15,ellipse);float edge=1.-smoothstep(250.,285.,max(abs(p.x),abs(p.y)));float patch=smoothstep(.2,.75,noise(p));vec4 uv=vUv;uv.xy+=vec2(sin(p.y*.7+clock),cos(p.x*.6+clock*.8))*.0005*uv.w;vec4 r=texture2DProj(tDiffuse,uv);gl_FragColor=vec4(mix(color,r.rgb,.86),outside*edge*patch*wetness*.35);}",
-    "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n\n    at /home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/tests/acceptance.mjs:25:14"
+    "page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"file:///home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/dist/birdsnest-v2-offline.html\", waiting until \"load\"\n\n    at /home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/tests/acceptance.mjs:51:16"
   ],
   "externalRequests": [],
   "testEnvironment": "Headless Chromium / Linux / SwiftShader. This does not establish user-device frame rate.",
-  "passed": 2,
-  "failed": 0
+  "passed": 15,
+  "failed": 3
 }
