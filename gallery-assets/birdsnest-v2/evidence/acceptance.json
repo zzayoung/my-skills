@@ -1,0 +1,21 @@
+{
+  "checks": [
+    {
+      "name": "offline boot without a mandatory welcome overlay",
+      "pass": true,
+      "detail": "鸟巢 · 雨后的钢织天空"
+    },
+    {
+      "name": "no CDN or remote asset requests",
+      "pass": true
+    }
+  ],
+  "errors": [
+    "THREE.WebGLProgram: Shader Error 0 - VALIDATE_STATUS false\n\nMaterial Name: unspecified\nMaterial Type: ShaderMaterial\n\nProgram Info Log: Fragment shader is not compiled.\n\u0000\n\nFRAGMENT\n\nERROR: 0:160: 'patch' : Illegal use of reserved word\nERROR: 0:160: 'patch' : syntax error\n\u0000\n\n  155: \treturn dot( weights, rgb );\n  156: }\n  157: \n  158: uniform sampler2D tDiffuse;uniform vec3 color;uniform float wetness;uniform float clock;varying vec4 vUv;varying vec3 vWorld;\n  159:  float noise(vec2 p){return sin(p.x*.11+sin(p.y*.08)*2.)*.5+sin(p.y*.15-p.x*.043)*.27+sin(p.x*.34+p.y*.27)*.13;}\n> 160:  void main(){vec2 p=vWorld.xz;float ellipse=length(p/vec2(160.,179.));float outside=smoothstep(1.,1.15,ellipse);float edge=1.-smoothstep(250.,285.,max(abs(p.x),abs(p.y)));float patch=smoothstep(.2,.75,noise(p));vec4 uv=vUv;uv.xy+=vec2(sin(p.y*.7+clock),cos(p.x*.6+clock*.8))*.0005*uv.w;vec4 r=texture2DProj(tDiffuse,uv);gl_FragColor=vec4(mix(color,r.rgb,.86),outside*edge*patch*wetness*.35);}",
+    "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n\n    at /home/runner/work/my-skills/my-skills/gallery-assets/birdsnest-v2/tests/acceptance.mjs:25:14"
+  ],
+  "externalRequests": [],
+  "testEnvironment": "Headless Chromium / Linux / SwiftShader. This does not establish user-device frame rate.",
+  "passed": 2,
+  "failed": 0
+}
