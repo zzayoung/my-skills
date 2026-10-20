@@ -97,7 +97,28 @@ export function createBirdsnestWorld(T, options={}) {
     for(let i=0;i<NS;i++){const t=i/NS*TAU,t2=(i+1)/NS*TAU;if(ti===0&&Math.abs(t-Math.PI/2)<.065)continue;quad([a2*Math.cos(t),y,b2*Math.sin(t)],[a2*Math.cos(t2),y,b2*Math.sin(t2)],[a2*Math.cos(t2),y+tier.h/rows,b2*Math.sin(t2)],[a2*Math.cos(t),y+tier.h/rows,b2*Math.sin(t)],M.redDark,parts.bowl);}
     if(!preview){const count=Math.round(TAU*Math.sqrt((a*a+b*b)/2)/.92);for(let i=0;i<count;i++){const t=i/count*TAU;if(Math.abs(Math.sin(t*12))<.14||(ti===0&&Math.abs(t-Math.PI/2)<.085))continue;seats.push({x:(a+.5)*Math.cos(t),y:y+.53,z:(b+.5)*Math.sin(t),angle:-t+Math.PI/2,color:rand()});}}
   }});
-  if(!preview){const sit=new T.InstancedMesh(new T.BoxGeometry(.56,.12,.47),M.seat,seats.length);const back=new T.InstancedMesh(new T.BoxGeometry(.56,.48,.075),M.seatback,seats.length);const ob=new T.Object3D(),color=new T.Color();seats.forEach((s,i)=>{ob.position.set(s.x,s.y-.12,s.z);ob.rotation.y=s.angle;ob.updateMatrix();sit.setMatrixAt(i,ob.matrix);const offset=new T.Vector3(0,.17,.2).applyAxisAngle(up,s.angle);ob.position.set(s.x+offset.x,s.y+offset.y,s.z+offset.z);ob.updateMatrix();back.setMatrixAt(i,ob.matrix);color.setHSL(.018+s.color*.014,.47+s.color*.08,.29+s.color*.12);sit.setColorAt(i,color);back.setColorAt(i,color);});sit.receiveShadow=back.receiveShadow=true;parts.bowl.add(sit,back);}
+  if(!preview){
+    // Eight-triangle L-shaped seats preserve a real seat/back silhouette. Sector
+    // instancing permits proper frustum and distance culling instead of drawing
+    // every seat while looking at the outside of the building.
+    const chair=new T.BufferGeometry();
+    const positions=[];
+    const q=(a,b,c,d)=>positions.push(...a,...b,...c,...a,...c,...d);
+    q([-.28,-.06,-.24],[-.28,-.06,.24],[.28,-.06,.24],[.28,-.06,-.24]);
+    q([-.28,-.18,-.24],[-.28,-.06,-.24],[.28,-.06,-.24],[.28,-.18,-.24]);
+    q([-.28,-.06,.2],[-.28,.52,.2],[.28,.52,.2],[.28,-.06,.2]);
+    q([-.28,.52,.2],[-.28,.52,.27],[.28,.52,.27],[.28,.52,.2]);
+    chair.setAttribute('position',new T.Float32BufferAttribute(positions,3));chair.computeVertexNormals();
+    M.seat.side=T.DoubleSide;
+    const sectors=Array.from({length:24},()=>[]);
+    seats.forEach(s=>sectors[Math.floor(((Math.atan2(s.z,s.x)+TAU)%TAU)/TAU*24)%24].push(s));
+    const ob=new T.Object3D(),color=new T.Color();
+    for(const sector of sectors){
+      const m=new T.InstancedMesh(chair,M.seat,sector.length);
+      sector.forEach((s,i)=>{ob.position.set(s.x,s.y,s.z);ob.rotation.y=s.angle;ob.updateMatrix();m.setMatrixAt(i,ob.matrix);color.setHSL(.018+s.color*.014,.47+s.color*.08,.29+s.color*.12);m.setColorAt(i,color);});
+      m.userData.seatDetail=true;m.receiveShadow=true;m.computeBoundingSphere();parts.bowl.add(m);
+    }
+  }
   // The athletic track has parallel straights and semicircular ends, not an ellipse.
   const capsule=(t,r)=>[Math.cos(t)*r,Math.sin(t)*r+(Math.sin(t)>=0?42.2:-42.2)];
   for(let i=0;i<192;i++){const t=i/192*TAU,t2=(i+1)/192*TAU,a=capsule(t,47.6),b=capsule(t,36.5),c=capsule(t2,36.5),d=capsule(t2,47.6);quad([a[0],G+.075,a[1]],[b[0],G+.075,b[1]],[c[0],G+.075,c[1]],[d[0],G+.075,d[1]],M.track,parts.interior);for(let lane=0;lane<10;lane++){const r=36.5+lane*1.22;const a=capsule(t,r),b=capsule(t,r+.065),c=capsule(t2,r+.065),d=capsule(t2,r);quad([a[0],G+.09,a[1]],[b[0],G+.09,b[1]],[c[0],G+.09,c[1]],[d[0],G+.09,d[1]],M.line,parts.interior);}}
@@ -163,7 +184,7 @@ export function createBirdsnestWorld(T, options={}) {
     return[x,floorAt(x,z,y)+1.7,z];
   }
   function setWeather(value){wet=value==='rain'?1:value==='afterrain'?.65:value==='snow'?.1:.15;M.paving.roughness=.78-wet*.46;M.asphalt.roughness=.78-wet*.48;M.paving.metalness=.025+wet*.12;}
-  function setNight(value){night=clamp(value,0,1);M.light.emissiveIntensity=1.6+night*2.5;M.redGlow.emissiveIntensity=.14+night*.7;roomLight.intensity=110;}
+  function setNight(value){night=clamp(value,0,1);M.light.emissiveIntensity=arenaOn?1.6+night*2.5:.08;M.redGlow.emissiveIntensity=.14+night*.7;roomLight.intensity=110;}
   function setSection(value){section=value;parts.roof.visible=value==='all';parts.steel.visible=value!=='basement';parts.site.visible=value!=='basement';parts.landscape.visible=value!=='basement';parts.bowl.visible=value!=='basement';parts.interior.visible=value!=='basement';parts.details.visible=value!=='basement';if(value==='open'){parts.steel.visible=true;}}
   function activateInteraction(id){if(id==='door'){doorOpen=!doorOpen;interactions[1].label=doorOpen?'合上地下门':'推开地下门';return true;}if(id==='lights'){arenaOn=!arenaOn;M.light.emissiveIntensity=arenaOn?3.5:.08;interactions[0].label=arenaOn?'熄灭赛场灯':'点亮赛场';return true;}return id==='echo';}
   function update(dt,time){if(disposed)return;const target=doorOpen?-Math.PI*.5:0;doorAngle+=(target-doorAngle)*(1-Math.exp(-dt*5));door.rotation.y=doorAngle;}

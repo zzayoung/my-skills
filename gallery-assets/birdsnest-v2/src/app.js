@@ -17,7 +17,7 @@ window.addEventListener('error',e=>{if(!window.__birdsnest?.ready)fatal(e.error|
 
 try {
 const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,touch?1.35:1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio,touch?1.25:1));
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
@@ -30,11 +30,12 @@ const env=pmrem.fromScene(envScene,.05);scene.environment=env.texture;scene.envi
 envScene.dispose();pmrem.dispose();
 const hemi=new T.HemisphereLight('#dbe9dc','#53696a',2.1);scene.add(hemi);
 const sun=new T.DirectionalLight('#ffdab0',3.4);sun.position.set(-180,270,180);sun.target.position.set(0,20,0);sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-355,right:355,top:335,bottom:-335,near:10,far:850});sun.shadow.bias=-.00015;sun.shadow.normalBias=.35;sun.shadow.radius=3;scene.add(sun,sun.target);
+sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-355,right:355,top:335,bottom:-335,near:10,far:850});sun.shadow.bias=-.00015;sun.shadow.normalBias=.35;sun.shadow.radius=3;scene.add(sun,sun.target);
 const rim=new T.DirectionalLight('#a1cfdd',.65);rim.position.set(180,80,-190);scene.add(rim);
 const floorMat=new T.MeshStandardMaterial({color:'#637f80',roughness:.98});
 const backdrop=new T.Mesh(new T.PlaneGeometry(5000,5000),floorMat);backdrop.rotation.x=-Math.PI/2;backdrop.position.y=-.17;backdrop.receiveShadow=true;scene.add(backdrop);
 const world=createBirdsnestWorld(T);world.materials.redGlow.side=T.DoubleSide;scene.add(world.group);
+const seatDetailMeshes=world.parts.bowl.children.filter(o=>o.userData.seatDetail);
 const arenaFill=new T.PointLight('#ffe6b4',0,240,2);arenaFill.position.set(0,72,0);scene.add(arenaFill);
 const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=true;controls.minDistance=155;controls.maxDistance=1050;controls.minPolarAngle=.17;controls.maxPolarAngle=1.43;controls.zoomSpeed=.8;controls.rotateSpeed=.68;controls.panSpeed=.7;
 camera.position.fromArray(VIEWS[0].position);controls.target.fromArray(VIEWS[0].target);
@@ -53,9 +54,9 @@ const reflectionShader={
  vertexShader:`uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vWorld; void main(){vUv=textureMatrix*vec4(position,1.);vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
  fragmentShader:`uniform sampler2D tDiffuse;uniform vec3 color;uniform float wetness;uniform float clock;varying vec4 vUv;varying vec3 vWorld;
  float noise(vec2 p){return sin(p.x*.11+sin(p.y*.08)*2.)*.5+sin(p.y*.15-p.x*.043)*.27+sin(p.x*.34+p.y*.27)*.13;}
- void main(){vec2 p=vWorld.xz;float ellipse=length(p/vec2(160.,179.));float outside=smoothstep(1.,1.15,ellipse);float edge=1.-smoothstep(250.,285.,max(abs(p.x),abs(p.y)));float patch=smoothstep(.2,.75,noise(p));vec4 uv=vUv;uv.xy+=vec2(sin(p.y*.7+clock),cos(p.x*.6+clock*.8))*.0005*uv.w;vec4 r=texture2DProj(tDiffuse,uv);gl_FragColor=vec4(mix(color,r.rgb,.86),outside*edge*patch*wetness*.35);}`
+ void main(){vec2 p=vWorld.xz;float ellipse=length(p/vec2(160.,179.));float outside=smoothstep(1.,1.15,ellipse);float edge=1.-smoothstep(250.,285.,max(abs(p.x),abs(p.y)));float puddleMask=smoothstep(.2,.75,noise(p));vec4 uv=vUv;uv.xy+=vec2(sin(p.y*.7+clock),cos(p.x*.6+clock*.8))*.0005*uv.w;vec4 r=texture2DProj(tDiffuse,uv);gl_FragColor=vec4(mix(color,r.rgb,.86),outside*edge*puddleMask*wetness*.35);}`
 };
-const puddles=new Reflector(new T.PlaneGeometry(600,550),{textureWidth:touch?256:512,textureHeight:touch?256:512,clipBias:.003,shader:reflectionShader});
+const puddles=new Reflector(new T.PlaneGeometry(600,550),{textureWidth:touch?128:256,textureHeight:touch?128:256,clipBias:.003,shader:reflectionShader});
 puddles.rotation.x=-Math.PI/2;puddles.position.y=GRADE+.11;puddles.material.transparent=true;puddles.material.depthWrite=false;puddles.renderOrder=2;scene.add(puddles);
 const reflectOriginal=puddles.onBeforeRender;let renderingReflection=false;
 puddles.onBeforeRender=function(...args){renderingReflection=true;try{reflectOriginal.apply(this,args);}finally{renderingReflection=false;}};
@@ -120,7 +121,7 @@ function transitionTo(view){
  world.activateSpot(view.id);if(section!=='all'&&view.mode!=='orbit'){section='all';world.setSection('all');$('#sectiontext').textContent='揭开屋盖';}
  const endPos=new T.Vector3(...view.position),endTarget=new T.Vector3(...view.target),dummy=new T.PerspectiveCamera();dummy.position.copy(endPos);dummy.lookAt(endTarget);
  const distance=camera.position.distanceTo(endPos),duration=reduced?.05:Math.min(2.35,1.1+distance/500);
- transition={startPos:camera.position.clone(),endPos,startQuat:camera.quaternion.clone(),endQuat:dummy.quaternion.clone(),target:endTarget,nextMode:view.mode,t:0,duration,arc:view.mode==='orbit'?0:Math.min(distance*.09,35)};
+ transition={startPos:camera.position.clone(),endPos,startQuat:camera.quaternion.clone(),endQuat:dummy.quaternion.clone(),target:endTarget,nextMode:view.mode,t:0,startTime:performance.now(),duration,arc:view.mode==='orbit'?0:Math.min(distance*.09,35)};
  setMode(view.mode);controls.enabled=false;$('#place').textContent=view.label;$('#mood').textContent=view.detail;visited.add(view.id);if(view.id==='basement')toast('地下空间为研究性重建，并非实测施工图。');canvas.focus({preventScroll:true});
 }
 function returnOrbit(){transitionTo({...VIEWS[0],position:orbitSaved.position.toArray(),target:orbitSaved.target.toArray()});}
@@ -174,14 +175,15 @@ function updateMovement(dt){
  if(delta.lengthSq()>0){if(mode==='walk')camera.position.fromArray(world.resolveMovement(camera.position.toArray(),delta.toArray()));else{camera.position.add(delta);camera.position.x=clamp(camera.position.x,-480,480);camera.position.z=clamp(camera.position.z,-450,450);camera.position.y=clamp(camera.position.y,1.8,350);}}
  return camera.position.distanceTo(previousPosition);
 }
-function updateTransition(dt){if(!transition)return;const tr=transition;tr.t+=dt;const u=clamp(tr.t/tr.duration,0,1),e=u*u*(3-2*u);camera.position.lerpVectors(tr.startPos,tr.endPos,e);camera.position.y+=Math.sin(Math.PI*u)*tr.arc;camera.quaternion.slerpQuaternions(tr.startQuat,tr.endQuat,e);if(u===1){camera.position.copy(tr.endPos);camera.quaternion.copy(tr.endQuat);transition=null;syncLook();if(mode==='orbit'){controls.target.copy(tr.target);controls.enabled=true;controls.update();}}}
+function updateTransition(dt){if(!transition)return;const tr=transition;tr.t=(performance.now()-tr.startTime)/1000;const u=clamp(tr.t/tr.duration,0,1),e=u*u*(3-2*u);camera.position.lerpVectors(tr.startPos,tr.endPos,e);camera.position.y+=Math.sin(Math.PI*u)*tr.arc;camera.quaternion.slerpQuaternions(tr.startQuat,tr.endQuat,e);if(u===1){camera.position.copy(tr.endPos);camera.quaternion.copy(tr.endQuat);transition=null;syncLook();if(mode==='orbit'){controls.target.copy(tr.target);controls.enabled=true;controls.update();}}}
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 window.addEventListener('resize',resize);canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();disposed=true;fatal(new Error('图形上下文中断；重新打开可恢复场景。'));});
 world.setWeather(weather);
 const clock=new T.Clock();
-function animate(){if(disposed)return;requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);elapsed+=dt;frame++;
+function animate(){if(disposed)return;requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.12);elapsed+=dt;frame++;
  updateTransition(dt);if(mode==='orbit'&&!transition)controls.update();const moved=updateMovement(dt);world.update(dt,elapsed);updateLighting(dt);atmosphere(dt,elapsed);updateAudio(moved);
  if(frame%3===0)updateHotspots();if(elapsed-lastInteractionUpdate>.15){updateInteractions();lastInteractionUpdate=elapsed;}
+ for(const m of seatDetailMeshes)m.visible=camera.position.distanceTo(m.boundingSphere.center)<215;
  renderer.render(scene,camera);lastStats={triangles:renderer.info.render.triangles,calls:renderer.info.render.calls};
  if(firstFrame){firstFrame=false;$('#loading').classList.add('done');window.__birdsnest.ready=true;}
 }
